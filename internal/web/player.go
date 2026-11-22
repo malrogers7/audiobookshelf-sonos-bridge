@@ -253,7 +253,7 @@ func (h *PlayerHandler) HandlePlay(w http.ResponseWriter, r *http.Request) {
 	progress, err := absClient.GetProgress(ctx, itemID)
 	if err != nil && !errors.Is(err, abs.ErrNotFound) {
 		slog.Error("failed to get progress from ABS", "item_id", itemID, "error", err)
-		http.Error(w, "Audiobookshelf nicht erreichbar", http.StatusBadGateway)
+		http.Error(w, "Audiobookshelf unreachable", http.StatusBadGateway)
 		return
 	}
 	startPositionSec := 0
@@ -2430,6 +2430,10 @@ func (h *PlayerHandler) HandleGetAllPlayers(w http.ResponseWriter, r *http.Reque
 
 		// Skip invisible players (stereo pair slaves)
 		if invisibleUUIDs[normalizedDeviceUUID] {
+			continue
+		}
+		// Skip bonded satellites (surrounds/sub): not in the zone topology
+		if _, known := groupInfo[normalizedDeviceUUID]; !known {
 			continue
 		}
 
