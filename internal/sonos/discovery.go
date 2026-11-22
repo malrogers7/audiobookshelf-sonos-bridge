@@ -92,6 +92,9 @@ func (d *Discovery) Discover(ctx context.Context, timeout time.Duration) ([]Devi
 				groupMembersFiltered++
 			}
 		}
+		if !hasInfo && len(groupInfo) > 0 {
+    	isHidden = true
+		}
 
 		// Upsert to database with hidden flag and group size
 		storeDevice := &store.SonosDevice{
@@ -222,7 +225,10 @@ func (d *Discovery) ssdpSearch(ctx context.Context, timeout time.Duration) ([]st
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve multicast address: %w", err)
 	}
-
+	mx := int(timeout.Seconds()) - 1
+	if mx < 1 {
+    mx = 1
+	}
 	// Build M-SEARCH request
 	searchRequest := fmt.Sprintf(
 		"M-SEARCH * HTTP/1.1\r\n"+
@@ -232,14 +238,16 @@ func (d *Discovery) ssdpSearch(ctx context.Context, timeout time.Duration) ([]st
 			"ST: %s\r\n"+
 			"\r\n",
 		SSDPMulticastAddr,
-		int(timeout.Seconds()),
+		mx, 
 		SSDPSearchTarget,
 	)
 
 	// Send M-SEARCH
-	_, err = conn.WriteToUDP([]byte(searchRequest), addr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send M-SEARCH: %w", err)
+	for i := 0; i < 3; i++ {
+    if _, err = conn.WriteToUDP([]byte(searchRequest), addr); err != nil {
+        return nil, fmt.Errorf("failed to send M-SEARCH: %w", err)
+    }
+    time.Sleep(300 * time.Millisecond)
 	}
 
 	// Collect responses
@@ -453,6 +461,9 @@ func (d *Discovery) RefreshGroupInfo(ctx context.Context) error {
 			slog.Debug("RefreshGroupInfo: no group info for device",
 				"device_name", device.Name,
 				"normalized_uuid", normalizedUUID)
+			if len(groupInfo) > 0 {
+	        	isHidden = true
+			}
 		}
 
 		// Only update if something changed
