@@ -245,7 +245,7 @@ async function startPlayback() {
         }
 
         if (response.status === 503) {
-            alert('Warteschlange voll, bitte später erneut versuchen.');
+            alert('Queue full, please try again later.');
             return;
         }
 
@@ -300,7 +300,7 @@ async function retryPrepare(itemId) {
     try {
         const resp = await fetch('/cache/prepare/' + encodeURIComponent(itemId), { method: 'POST' });
         if (resp.status === 503) {
-            alert('Warteschlange voll, bitte später erneut versuchen.');
+            alert('Queue full, please try again later.');
             return;
         }
     } catch (err) {
@@ -329,16 +329,16 @@ async function pollPrepare(itemId, autoPlay) {
         }
         if (data.status === 'failed') {
             if (playBtn) playBtn.disabled = false;
-            renderPrepareStatus('<div class="prepare-error"></div><button type="button" class="btn btn-secondary" onclick="retryPrepare(\'' + itemId + '\')">Erneut versuchen</button>');
+            renderPrepareStatus('<div class="prepare-error"></div><button type="button" class="btn btn-secondary" onclick="retryPrepare(\'' + itemId + '\')">Try again</button>');
             document.querySelector('#prepare-status .prepare-error').textContent =
-                'Vorbereitung fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler');
+                'Preparation failed: ' + (data.error || 'Unknown error');
             return;
         }
         if (data.status === 'in_progress') {
             if (playBtn) playBtn.disabled = true;
             const pct = data.percent || 0;
             renderPrepareStatus(
-                '<div class="prepare-text"><span class="spinner prepare-spinner"></span>Wird vorbereitet \u2026 ' + pct + ' %</div>' +
+                '<div class="prepare-text"><span class="spinner prepare-spinner"></span>Being prepared \u2026 ' + pct + ' %</div>' +
                 '<div class="prepare-bar"><div class="prepare-bar-fill" style="width:' + pct + '%"></div></div>');
             prepareTimer = setTimeout(function() { pollPrepare(itemId, true); }, 2000);
             return;
