@@ -59,7 +59,7 @@
                     <span id="play-btn-text">Play</span>
                 </button>
                 <button type="button" class="btn btn-secondary" id="prepare-btn" onclick="prepareThisItem()" style="display:none">
-                    Vorab laden
+                    Pre-load
                 </button>
             </div>
         </div>
@@ -70,11 +70,11 @@
 <div id="loading-overlay" class="loading-overlay" style="display: none;">
     <div class="loading-content">
         <div class="loading-spinner"></div>
-        <p id="loading-message">Hörbuch wird vorbereitet …</p>
+        <p id="loading-message">Audiobook is being prepared...</p>
         <div id="overlay-bar" class="overlay-bar" style="display:none"><div id="overlay-bar-fill" class="overlay-bar-fill"></div></div>
         <div class="overlay-actions">
-            <button type="button" class="btn btn-secondary" id="overlay-retry" onclick="retryPrepare()" style="display:none">Erneut versuchen</button>
-            <button type="button" class="btn btn-secondary" id="overlay-close" onclick="closeOverlay()" style="display:none">Schließen</button>
+            <button type="button" class="btn btn-secondary" id="overlay-retry" onclick="retryPrepare()" style="display:none">Try again</button>
+            <button type="button" class="btn btn-secondary" id="overlay-close" onclick="closeOverlay()" style="display:none">Close</button>
         </div>
     </div>
 </div>
@@ -100,7 +100,7 @@ function updatePrepareButton() {
 
 function showOverlayProgress(pct) {
     document.getElementById('loading-message').textContent =
-        'Hörbuch wird vorbereitet … ' + pct + ' %. Du kannst die Seite verlassen, die Vorbereitung läuft weiter.';
+        'Audibook is being prepared … ' + pct + ' %. You can leave this page. Preparation will continue.';
     document.getElementById('overlay-bar').style.display = 'block';
     document.getElementById('overlay-bar-fill').style.width = pct + '%';
     document.getElementById('overlay-close').style.display = '';
@@ -108,7 +108,7 @@ function showOverlayProgress(pct) {
 }
 
 function showOverlayError(message) {
-    document.getElementById('loading-message').textContent = 'Vorbereitung fehlgeschlagen: ' + message;
+    document.getElementById('loading-message').textContent = 'Preparation failed: ' + message;
     document.getElementById('overlay-bar').style.display = 'none';
     document.getElementById('overlay-close').style.display = '';
     document.getElementById('overlay-retry').style.display = '';
@@ -137,7 +137,7 @@ async function checkCacheStatus() {
         const btn = document.getElementById('play-btn');
 
         if (data.status === 'ready') {
-            setStatusText('status-cached', 'Bereit zum Abspielen');
+            setStatusText('status-cached', 'Ready to play');
             btn.disabled = false;
             if (overlayMode) {
                 overlayMode = false;
@@ -145,16 +145,16 @@ async function checkCacheStatus() {
             }
         } else if (data.status === 'in_progress') {
             const pct = data.percent || 0;
-            setStatusText('status-progress', 'Wird vorbereitet … ' + pct + ' %');
+            setStatusText('status-progress', 'Being prepared … ' + pct + ' %');
             btn.disabled = true;
             if (overlayMode) showOverlayProgress(pct);
             pollTimer = setTimeout(checkCacheStatus, 2000);
         } else if (data.status === 'failed') {
-            setStatusText('status-failed', 'Fehlgeschlagen: ' + (data.error || 'Unbekannter Fehler'));
+            setStatusText('status-failed', 'Failed: ' + (data.error || 'Unknown error'));
             btn.disabled = false;
-            if (overlayMode) showOverlayError(data.error || 'Unbekannter Fehler');
+            if (overlayMode) showOverlayError(data.error || 'Unknown error');
         } else {
-            setStatusText('status-pending', 'Nicht im Cache');
+            setStatusText('status-pending', 'Not in cache');
             btn.disabled = false;
         }
         updatePrepareButton();
@@ -164,12 +164,12 @@ async function checkCacheStatus() {
     }
 }
 
-// Queue the item for background caching ("Vorab laden" / "Erneut versuchen")
+// Queue the item for background caching ("Pre-load" / "Try again")
 async function prepareThisItem() {
     try {
         const response = await fetch('/cache/prepare/' + itemId, { method: 'POST' });
         if (response.status === 503) {
-            alert('Warteschlange voll, bitte später erneut versuchen.');
+            alert('Queue full, please try again later.');
             return;
         }
         if (!response.ok) {
@@ -177,7 +177,7 @@ async function prepareThisItem() {
         }
     } catch (err) {
         console.error('Prepare failed:', err);
-        alert('Vorbereitung konnte nicht gestartet werden.');
+        alert('Preparation could not be started.');
         return;
     }
     cacheStatus = 'in_progress';
@@ -188,7 +188,7 @@ async function prepareThisItem() {
 
 async function retryPrepare() {
     document.querySelector('#loading-overlay .loading-spinner').style.display = '';
-    document.getElementById('loading-message').textContent = 'Hörbuch wird vorbereitet …';
+    document.getElementById('loading-message').textContent = 'Audiobook is being prepared …';
     await prepareThisItem();
 }
 
@@ -196,7 +196,7 @@ function playItem() {
     const sonosUUID = localStorage.getItem('selectedSonosUUID');
 
     if (!sonosUUID) {
-        alert('Bitte wähle zuerst einen Sonos-Lautsprecher aus.');
+        alert('Please select a Sonos speaker first.');
         document.getElementById('sonos-picker-toggle')?.click();
         return;
     }
@@ -210,7 +210,7 @@ function playItem() {
     btn.disabled = true;
     btnText.textContent = 'Starte …';
     overlay.style.display = 'flex';
-    loadingMessage.textContent = 'Wiedergabe wird gestartet …';
+    loadingMessage.textContent = 'Playback is starting …';
 
     const formData = new FormData();
     formData.append('item_id', itemId);
@@ -247,7 +247,7 @@ function playItem() {
     })
     .catch(err => {
         console.error('Play failed:', err);
-        alert(err.queueFull ? 'Warteschlange voll, bitte später erneut versuchen.' : 'Wiedergabe konnte nicht gestartet werden. Bitte erneut versuchen.');
+        alert(err.queueFull ? 'Queue full, please try again later.' : 'Playback could not be started.  Please try again later.');
         overlay.style.display = 'none';
         btn.disabled = false;
         btnText.textContent = 'Play';
